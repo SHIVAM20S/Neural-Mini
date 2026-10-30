@@ -42,3 +42,8 @@ ml_project/
    ```bash
    python train_cli.py --preset moons --samples 240 --noise 0.18 --model poly_logistic
    ```
+
+
+
+
+   Author-> Shivam Sharma (25MDA10008)
