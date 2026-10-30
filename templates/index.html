@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ML Classification Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <link rel="stylesheet" href="../static/css/styles.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Minimal Header: Just Name and Status -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      <h1 class="text-base font-semibold text-slate-900 tracking-tight">ML Classification Dashboard</h1>
+      <div class="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200">
+        <span id="statusDot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="statusText" class="font-medium text-slate-700">Status: Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Grid -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- Left Column: Controls (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+
+      <!-- Dataset Panel -->
+      <section class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-800">Dataset</h2>
+          <div class="inline-flex p-0.5 bg-slate-100 rounded-md border border-slate-200 text-xs">
+            <button id="tabBtnSynthetic" class="px-2.5 py-1 rounded bg-white text-slate-900 font-medium shadow-sm">Generate</button>
+            <button id="tabBtnCSV" class="px-2.5 py-1 rounded text-slate-600 hover:text-slate-900">Upload CSV</button>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <!-- Synthetic Controls -->
+          <div id="panelSynthetic" class="flex flex-col gap-3.5">
+            <div>
+              <label for="selectPreset" class="block text-xs font-medium text-slate-700 mb-1">Pattern</label>
+              <select id="selectPreset" class="w-full text-xs bg-white border border-slate-300 rounded-md px-2.5 py-2 text-slate-800 focus:outline-none focus:border-blue-600">
+                <option value="moons">Two Moons (Non-Linear)</option>
+                <option value="circles">Concentric Circles (Radial)</option>
+                <option value="blobs">Gaussian Blobs (Linear)</option>
+                <option value="xor">XOR Quadrants</option>
+                <option value="churn">Customer Churn (3 Features)</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-slate-50 p-2.5 rounded-md border border-slate-200">
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-slate-600">Samples</span>
+                  <span id="valSamples" class="font-mono font-semibold text-slate-900">240</span>
+                </div>
+                <input id="inputSamples" type="range" min="80" max="600" step="20" value="240" class="w-full accent-blue-600 cursor-pointer">
+              </div>
+
+              <div class="bg-slate-50 p-2.5 rounded-md border border-slate-200">
+                <div class="flex justify-between text-xs mb-1">
+                  <span class="text-slate-600">Noise</span>
+                  <span id="valNoise" class="font-mono font-semibold text-slate-900">0.18</span>
+                </div>
+                <input id="inputNoise" type="range" min="0.02" max="0.45" step="0.02" value="0.18" class="w-full accent-blue-600 cursor-pointer">
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <button id="btnGenerateData" class="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-md transition">
+                Generate New Data
+              </button>
+              <button id="btnExportCSV" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs rounded-md border border-slate-300 transition">
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload CSV Controls -->
+          <div id="panelCSV" class="hidden flex flex-col gap-3.5">
+            <div class="border border-dashed border-slate-300 rounded-md p-3.5 text-center bg-slate-50">
+              <input type="file" id="fileInputCSV" accept=".csv,text/csv,text/plain" class="text-xs text-slate-600 w-full cursor-pointer">
+              <p class="text-[11px] text-slate-500 mt-1.5">Select any CSV file with header columns. Last column is used as target by default.</p>
+            </div>
+
+            <div id="csvColumnSelector" class="hidden flex flex-col gap-2 bg-slate-50 p-3 rounded-md border border-slate-200">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-medium text-slate-700">Target Column:</span>
+                <select id="selectTargetCol" class="bg-white border border-slate-300 rounded px-2 py-1 text-xs font-mono"></select>
+              </div>
+              <button id="btnApplyUploadedCSV" class="w-full py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded">
+                Load &amp; Train CSV
+              </button>
+            </div>
+
+            <div>
+              <p class="text-xs font-medium text-slate-600 mb-1.5">Sample datasets:</p>
+              <div class="flex flex-wrap gap-1.5">
+                <button data-sample="churn" class="btnSampleCSV px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">Customer Churn</button>
+                <button data-sample="iris" class="btnSampleCSV px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">Iris Binary</button>
+                <button data-sample="exam" class="btnSampleCSV px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">Exam Pass</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Stats -->
+          <div class="mt-3.5 pt-3 border-t border-slate-200 flex justify-between text-xs text-slate-600">
+            <span>Samples: <strong id="summaryRows" class="font-mono text-slate-900">240</strong></span>
+            <span>Features: <strong id="summaryFeatures" class="font-mono text-slate-900">2</strong></span>
+            <span>Classes: <strong id="summaryClasses" class="font-mono text-slate-900">0: 120 | 1: 120</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Model Training Panel -->
+      <section class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-200">
+          <h2 class="text-sm font-semibold text-slate-800">Model Training</h2>
+        </div>
+
+        <div class="p-4 flex flex-col gap-3.5">
+          <div>
+            <label for="selectModelType" class="block text-xs font-medium text-slate-700 mb-1">Algorithm</label>
+            <select id="selectModelType" class="w-full text-xs bg-white border border-slate-300 rounded-md px-2.5 py-2 text-slate-800 focus:outline-none focus:border-blue-600">
+              <option value="poly_logistic">Logistic Regression (Polynomial Degree 2)</option>
+              <option value="logistic">Logistic Regression (Linear)</option>
+              <option value="knn">K-Nearest Neighbors (KNN)</option>
+              <option value="decision_tree">Decision Tree (CART)</option>
+            </select>
+          </div>
+
+          <!-- Logistic Params -->
+          <div id="boxParamsLogistic" class="grid grid-cols-2 gap-3">
+            <div class="bg-slate-50 p-2.5 rounded-md border border-slate-200">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-600">Learning Rate</span>
+                <span id="valLR" class="font-mono font-semibold text-slate-900">0.15</span>
+              </div>
+              <input id="inputLR" type="range" min="0.01" max="0.80" step="0.01" value="0.15" class="w-full accent-blue-600 cursor-pointer">
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-md border border-slate-200">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-600">Epochs</span>
+                <span id="valEpochs" class="font-mono font-semibold text-slate-900">200</span>
+              </div>
+              <input id="inputEpochs" type="range" min="30" max="500" step="10" value="200" class="w-full accent-blue-600 cursor-pointer">
+            </div>
+          </div>
+
+          <!-- KNN / Tree Params -->
+          <div id="boxParamsOther" class="hidden grid grid-cols-2 gap-3">
+            <div class="bg-slate-50 p-2.5 rounded-md border border-slate-200">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-600">Neighbors (K)</span>
+                <span id="valKNN" class="font-mono font-semibold text-slate-900">5</span>
+              </div>
+              <input id="inputKNN" type="range" min="1" max="21" step="2" value="5" class="w-full accent-blue-600 cursor-pointer">
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-md border border-slate-200">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-600">Max Depth</span>
+                <span id="valDepth" class="font-mono font-semibold text-slate-900">4</span>
+              </div>
+              <input id="inputDepth" type="range" min="1" max="10" step="1" value="4" class="w-full accent-blue-600 cursor-pointer">
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs bg-slate-50 px-3 py-2 rounded-md border border-slate-200">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="chkStandardize" checked class="accent-blue-600">
+              <span class="text-slate-700">Standardize features (Z-score)</span>
+            </label>
+            <span class="font-mono text-slate-500">80/20 Split</span>
+          </div>
+
+          <button id="btnTrainModel" class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-md transition">
+            Train Model
+          </button>
+        </div>
+      </section>
+
+      <!-- Test Single Sample Panel -->
+      <section class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-200">
+          <h2 class="text-sm font-semibold text-slate-800">Test Prediction</h2>
+        </div>
+        <div class="p-4 flex flex-col gap-3.5">
+          <div id="inferenceSliders" class="flex flex-col gap-2.5"></div>
+
+          <div class="p-3.5 rounded-md bg-slate-900 text-white flex flex-col gap-2">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-slate-400">Predicted Class</span>
+              <span id="predBadge" class="px-2 py-0.5 rounded text-xs font-semibold bg-sky-500 text-white">Class 0</span>
+            </div>
+            <div class="flex justify-between text-xs font-mono text-slate-300">
+              <span id="predProb0">Class 0: 50.0%</span>
+              <span id="predProb1">Class 1: 50.0%</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+              <div id="barProb0" class="bg-sky-500 h-full transition-all" style="width: 50%"></div>
+              <div id="barProb1" class="bg-rose-500 h-full transition-all" style="width: 50%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Right Column: Visualizations (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col gap-5">
+
+      <!-- Decision Boundary & Scorecards -->
+      <section class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-slate-800">Decision Boundary</h2>
+          <div class="flex items-center gap-1.5 text-xs">
+            <span class="text-slate-500">Axes:</span>
+            <select id="selectAxisX" class="bg-white border border-slate-300 rounded px-2 py-1 font-mono text-xs"></select>
+            <span class="text-slate-400">vs</span>
+            <select id="selectAxisY" class="bg-white border border-slate-300 rounded px-2 py-1 font-mono text-xs"></select>
+          </div>
+        </div>
+
+        <div class="p-4 flex flex-col gap-4">
+          <div class="relative w-full aspect-[4/3] max-h-[360px] bg-slate-900 rounded-md overflow-hidden border border-slate-800 flex items-center justify-center">
+            <canvas id="boundaryCanvas" width="560" height="420" class="w-full h-full object-contain"></canvas>
+            <div class="absolute bottom-2 left-2 flex items-center gap-3 bg-slate-900/85 px-2.5 py-1 rounded text-[11px] text-slate-200 border border-slate-700">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-500 inline-block"></span> <span id="legendClass0">Class 0</span></span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> <span id="legendClass1">Class 1</span></span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-0.5 bg-amber-400 inline-block"></span> Boundary</span>
+            </div>
+          </div>
+
+          <!-- Metrics Row -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
+              <span class="text-[11px] text-slate-500 block">Test Accuracy</span>
+              <span id="metricTestAcc" class="text-lg font-bold font-mono text-slate-900">--%</span>
+              <span id="metricTrainAcc" class="text-[11px] text-slate-500 block">Train: --%</span>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
+              <span class="text-[11px] text-slate-500 block">Precision</span>
+              <span id="metricPrecision" class="text-lg font-bold font-mono text-slate-900">--</span>
+              <span class="text-[11px] text-slate-500 block">TP / (TP + FP)</span>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
+              <span class="text-[11px] text-slate-500 block">Recall</span>
+              <span id="metricRecall" class="text-lg font-bold font-mono text-slate-900">--</span>
+              <span class="text-[11px] text-slate-500 block">TP / (TP + FN)</span>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
+              <span class="text-[11px] text-slate-500 block">F1-Score</span>
+              <span id="metricF1" class="text-lg font-bold font-mono text-slate-900">--</span>
+              <span id="metricAUC" class="text-[11px] text-slate-500 block">ROC AUC: --</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Evaluation Plots -->
+      <section class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-4 py-2.5 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2">
+          <h2 class="text-sm font-semibold text-slate-800">Model Evaluation</h2>
+          <div class="flex gap-1 text-xs">
+            <button data-chart="loss" class="tabChartBtn px-2.5 py-1 rounded bg-slate-900 text-white font-medium">Loss Curve</button>
+            <button data-chart="cm" class="tabChartBtn px-2.5 py-1 rounded text-slate-600 hover:bg-slate-100">Confusion Matrix</button>
+            <button data-chart="roc" class="tabChartBtn px-2.5 py-1 rounded text-slate-600 hover:bg-slate-100">ROC Curve</button>
+            <button data-chart="weights" class="tabChartBtn px-2.5 py-1 rounded text-slate-600 hover:bg-slate-100">Feature Weights</button>
+          </div>
+        </div>
+
+        <div class="p-4">
+          <div id="viewChartLoss" class="relative h-60 w-full">
+            <canvas id="canvasLossChart"></canvas>
+          </div>
+
+          <div id="viewChartCM" class="hidden py-3 flex justify-center">
+            <div class="grid grid-cols-2 gap-3 w-full max-w-md text-center">
+              <div class="p-4 rounded-md bg-emerald-50 border border-emerald-200">
+                <div class="text-xs font-medium text-emerald-800">True Negative (TN)</div>
+                <div id="cmTN" class="text-2xl font-bold font-mono text-emerald-900 mt-1">0</div>
+              </div>
+              <div class="p-4 rounded-md bg-rose-50 border border-rose-200">
+                <div class="text-xs font-medium text-rose-800">False Positive (FP)</div>
+                <div id="cmFP" class="text-2xl font-bold font-mono text-rose-900 mt-1">0</div>
+              </div>
+              <div class="p-4 rounded-md bg-rose-50 border border-rose-200">
+                <div class="text-xs font-medium text-rose-800">False Negative (FN)</div>
+                <div id="cmFN" class="text-2xl font-bold font-mono text-rose-900 mt-1">0</div>
+              </div>
+              <div class="p-4 rounded-md bg-emerald-50 border border-emerald-200">
+                <div class="text-xs font-medium text-emerald-800">True Positive (TP)</div>
+                <div id="cmTP" class="text-2xl font-bold font-mono text-emerald-900 mt-1">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="viewChartROC" class="hidden relative h-60 w-full">
+            <canvas id="canvasROCChart"></canvas>
+          </div>
+
+          <div id="viewChartWeights" class="hidden relative h-60 w-full">
+            <canvas id="canvasWeightsChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Preview -->
+      <section class="bg-white rounded-lg border border-slate-200 shadow-sm">
+        <div class="px-4 py-2.5 border-b border-slate-200 flex justify-between items-center">
+          <h2 class="text-sm font-semibold text-slate-800">Data Preview</h2>
+          <span class="text-xs text-slate-500">First 10 rows</span>
+        </div>
+        <div class="p-4 overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono border border-slate-200">
+            <thead class="bg-slate-50 text-slate-700 border-b border-slate-200">
+              <tr id="previewHeaderRow"></tr>
+            </thead>
+            <tbody id="previewBodyRows" class="divide-y divide-slate-200"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Separated Modular JS Files (Relative paths so they work via file://, Live Server, and Python server) -->
+  <script src="../static/js/data_generator.js"></script>
+  <script src="../static/js/model_trainer.js"></script>
+  <script src="../static/js/visualizer.js"></script>
+  <script src="../static/js/dashboard.js"></script>
+</body>
+</html>
